@@ -1,0 +1,181 @@
+<section class="discover-grid">
+  <div class="page-card panel">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow">Doctor discovery</span>
+        <h2>Find the right specialist and available appointment slots.</h2>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <input
+        class="pill-input"
+        type="text"
+        placeholder="Search by specialization, clinic, or location"
+        [(ngModel)]="searchTerm"
+      />
+      <select class="pill-input" [(ngModel)]="specialization">
+        @for (option of specializationOptions; track option) {
+          <option [value]="option">{{ option === 'ALL' ? 'All specializations' : option }}</option>
+        }
+      </select>
+    </div>
+
+    @if (doctorsState === 'loading') {
+      <div class="status-message">Loading doctors...</div>
+    } @else if (doctorsState === 'error') {
+      <div class="status-message status-error">
+        The doctors list is not available right now. Please check again shortly.
+      </div>
+    } @else {
+      <div class="doctor-grid">
+        @for (provider of filteredProviders; track provider.providerId) {
+          <article
+            class="doctor-tile"
+            [class.selected]="selectedProvider?.providerId === provider.providerId"
+            (click)="selectProvider(provider)"
+          >
+            <div class="doctor-head">
+              <div class="doctor-avatar" [style.background]="provider.accent">{{ provider.initials }}</div>
+              <div>
+                <strong>{{ provider.displayName }}</strong>
+                <span>{{ provider.shortQualification }}</span>
+              </div>
+            </div>
+
+            <div class="doctor-meta">
+              <span>{{ provider.specialization }}</span>
+              <span>{{ provider.experienceLabel }}</span>
+              <span>{{ provider.clinicName }}</span>
+              <span>{{ provider.clinicAddress }}</span>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="side-stack">
+    <section class="page-card panel">
+      @if (selectedProvider) {
+        <div class="section-header">
+          <div>
+            <span class="eyebrow">Selected doctor</span>
+            <h2>{{ selectedProvider.displayName }}</h2>
+          </div>
+          <span class="rating-chip">{{ (selectedProvider.avgRating || 0) | number: '1.1-1' }} / 5</span>
+        </div>
+
+        <p class="provider-copy">{{ selectedProvider.bio || 'An experienced doctor available for timely consultation planning.' }}</p>
+
+        <form [formGroup]="bookingForm" class="booking-form">
+          <label>
+            <span>Choose date</span>
+            <input
+              class="pill-input"
+              type="date"
+              [(ngModel)]="selectedDate"
+              [ngModelOptions]="{ standalone: true }"
+              name="selectedDate"
+              (change)="loadSlots()"
+            />
+          </label>
+
+          <label>
+            <span>Service type</span>
+            <select class="pill-input" formControlName="serviceType">
+              <option value="General Consultation">General Consultation</option>
+              <option value="Follow Up">Follow Up</option>
+              <option value="Specialist Review">Specialist Review</option>
+              <option value="Video Advice">Video Advice</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Consultation mode</span>
+            <select class="pill-input" formControlName="modeOfConsultation">
+              <option value="IN_PERSON">In Person</option>
+              <option value="VIDEO">Video Call</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Notes</span>
+            <textarea class="pill-input" rows="4" formControlName="notes" placeholder="Symptoms, concerns, or context"></textarea>
+          </label>
+        </form>
+
+        <div class="price-banner">
+          <strong>Payable now</strong>
+          <span>{{ selectedAmountLabel }}</span>
+        </div>
+
+        @if (feedback) {
+          <div class="status-message" [class.status-error]="bookingState === 'error'" [class.status-success]="bookingState === 'done'">
+            {{ feedback }}
+          </div>
+        }
+
+        <div class="slots-header">
+          <strong>Available slots</strong>
+          <span>{{ selectedDate }}</span>
+        </div>
+
+        <div class="status-message">
+          @if (!selectedProvider) {
+            Select a doctor to view availability.
+          } @else if (!slots.length && slotsState !== 'loading' && slotsState !== 'error') {
+            Slots are published from the provider schedule side. Once availability exists, tap a slot to book it.
+          } @else {
+            Each available slot below works as the booking button.
+          }
+        </div>
+
+        @if (slotsState === 'loading') {
+          <div class="status-message">Loading slots...</div>
+        } @else if (slotsState === 'error') {
+          <div class="status-message status-error">No slots are available for the selected date right now.</div>
+        } @else if (!slots.length) {
+          <div class="status-message">No open slots were found for this date. Please add availability from the provider schedule first.</div>
+        } @else {
+          <div class="slot-list">
+            @for (slot of slots; track slot.slotId) {
+              <button type="button" class="slot-chip" [disabled]="bookingState === 'saving'" (click)="bookSlot(slot)">
+                <strong>{{ formatRange(slot) }}</strong>
+                <span>
+                  {{ slot.durationMinutes }} min &middot;
+                  {{ bookingState === 'saving' ? 'Preparing checkout...' : 'Tap to book and pay' }}
+                </span>
+              </button>
+            }
+          </div>
+        }
+      } @else {
+        <div class="status-message">Select a doctor to view the appointment panel here.</div>
+      }
+    </section>
+
+    <section class="page-card panel">
+      <div class="section-header">
+        <div>
+          <span class="eyebrow">Patient reviews</span>
+          <h2>What patients are saying</h2>
+        </div>
+      </div>
+
+      @if (!reviews.length) {
+        <div class="status-message">Reviews for the selected doctor are not available yet.</div>
+      } @else {
+        <div class="review-list">
+          @for (review of reviews.slice(0, 4); track review.reviewId) {
+            <article class="review-card">
+              <strong>{{ review.rating }} / 5</strong>
+              <p>{{ review.comment || 'No public comment added.' }}</p>
+              <span>Appointment #{{ review.appointmentId }}</span>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>

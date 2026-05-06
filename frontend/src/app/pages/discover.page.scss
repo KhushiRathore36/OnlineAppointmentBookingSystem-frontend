@@ -1,0 +1,170 @@
+.discover-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 1.25rem;
+}
+
+.panel {
+  padding: 1.5rem;
+}
+
+.side-stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.filter-row,
+.booking-form,
+.doctor-head,
+.slots-header {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.filter-row {
+  margin-bottom: 1.25rem;
+}
+
+.filter-row > * {
+  flex: 1;
+}
+
+.doctor-grid,
+.slot-list,
+.review-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.doctor-tile {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  transition: 180ms ease;
+}
+
+.doctor-tile:hover,
+.doctor-tile.selected {
+  transform: translateY(-2px);
+  border-color: rgba(108, 93, 255, 0.28);
+  box-shadow: 0 18px 44px rgba(55, 42, 111, 0.1);
+}
+
+.doctor-head {
+  align-items: center;
+}
+
+.doctor-avatar {
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 800;
+}
+
+.doctor-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1rem;
+  color: var(--ink-500);
+  font-size: 0.92rem;
+}
+
+.provider-copy {
+  color: var(--ink-700);
+  margin-top: -0.25rem;
+  line-height: 1.7;
+}
+
+.booking-form {
+  flex-direction: column;
+  margin-top: 1rem;
+}
+
+.booking-form label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.booking-form span,
+.review-card span,
+.slot-chip span,
+.doctor-head span {
+  color: var(--ink-500);
+  line-height: 1.6;
+}
+
+.slots-header {
+  margin: 1.1rem 0 0.8rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slot-chip {
+  border: 1px solid rgba(108, 93, 255, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 244, 255, 0.9));
+  text-align: left;
+  padding: 1rem;
+}
+
+.slot-chip:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.price-banner {
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border-radius: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(108, 93, 255, 0.12), rgba(255, 151, 118, 0.14));
+  border: 1px solid rgba(108, 93, 255, 0.14);
+}
+
+.price-banner span {
+  color: var(--ink-700);
+  font-weight: 800;
+}
+
+.rating-chip {
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 208, 130, 0.24);
+  color: #8b5c1d;
+  font-weight: 800;
+}
+
+.review-card {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.review-card p {
+  margin: 0.4rem 0 0.6rem;
+  color: var(--ink-700);
+  line-height: 1.7;
+}
+
+@media (max-width: 1080px) {
+  .discover-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .filter-row,
+  .doctor-meta {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+}

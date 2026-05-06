@@ -1,0 +1,100 @@
+<section class="auth-grid">
+  <div class="page-card auth-copy">
+    <span class="eyebrow">Welcome to MediBook</span>
+    <h1>Sign in to book doctors, manage visits, and stay on top of your care.</h1>
+    <p>
+      Create your account to explore appointments, choose the right doctor, and manage your
+      booking journey with ease.
+    </p>
+
+    <div class="bullet-grid">
+      <article class="soft-card">
+        <strong>Quick login</strong>
+        <span>Secure sign in gives you immediate access to your appointments dashboard.</span>
+      </article>
+      <article class="soft-card">
+        <strong>Saved profile</strong>
+        <span>Your details stay ready so the booking experience feels fast and smooth.</span>
+      </article>
+      <article class="soft-card">
+        <strong>Appointment ready</strong>
+        <span>Browse doctors, choose slots, and manage bookings after signing in.</span>
+      </article>
+    </div>
+  </div>
+
+  <div class="page-card auth-form-card">
+    <div class="mode-switch">
+      <button type="button" [class.active]="mode === 'login'" (click)="setMode('login')">Login</button>
+      <button type="button" [class.active]="mode === 'register'" (click)="setMode('register')">Register</button>
+    </div>
+
+    @if (statusMessage) {
+      <div class="status-message status-error">{{ statusMessage }}</div>
+    }
+
+    @if (mode === 'login') {
+      <form [formGroup]="loginForm" class="auth-form" (ngSubmit)="submitLogin()">
+        <label>
+          <span>Email</span>
+          <input class="pill-input" type="email" formControlName="email" placeholder="you@example.com" />
+        </label>
+        <label>
+          <span>Password</span>
+          <input class="pill-input" type="password" formControlName="password" placeholder="Minimum 6 characters" />
+        </label>
+
+        <button class="primary-button" type="submit" [disabled]="busy">
+          {{ busy ? 'Signing in...' : 'Login securely' }}
+        </button>
+
+        <div class="oauth-divider"><span>or continue with</span></div>
+
+        <button class="oauth-button" type="button" [disabled]="busy" (click)="continueWithGoogle()">
+          Google
+        </button>
+      </form>
+    } @else {
+      <form [formGroup]="registerForm" class="auth-form" (ngSubmit)="submitRegister()">
+        <label>
+          <span>Full name</span>
+          <input class="pill-input" type="text" formControlName="fullName" placeholder="Patient or provider name" />
+        </label>
+        <label>
+          <span>Email</span>
+          <input class="pill-input" type="email" formControlName="email" />
+        </label>
+        <label>
+          <span>Phone</span>
+          <input class="pill-input" type="tel" formControlName="phone" />
+        </label>
+        <label>
+          <span>Password</span>
+          <input class="pill-input" type="password" formControlName="password" />
+        </label>
+        <label>
+          <span>Role</span>
+          <select class="pill-input" formControlName="role">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </label>
+
+        <button class="primary-button" type="submit" [disabled]="busy">
+          {{ busy ? 'Creating account...' : 'Create account' }}
+        </button>
+
+        <div class="oauth-divider"><span>or start with</span></div>
+
+        <button class="oauth-button" type="button" [disabled]="busy" (click)="continueWithGoogle()">
+          Google
+        </button>
+      </form>
+    }
+
+    <p class="footnote">
+      Patient accounts go straight into booking flow. Provider accounts continue to the workspace to complete profile setup and publish slots.
+    </p>
+  </div>
+</section>

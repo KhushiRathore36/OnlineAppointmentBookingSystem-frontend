@@ -1,0 +1,58 @@
+{
+  "/api/auth": {
+    "target": "http://localhost:8081",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/auth": "/auth"
+    }
+  },
+  "/api/providers": {
+    "target": "http://localhost:8082",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/providers": "/providers"
+    }
+  },
+  "/api/slots": {
+    "target": "http://localhost:8084",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/slots": "/slots"
+    }
+  },
+  "/api/appointments": {
+    "target": "http://localhost:8085",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/appointments": "/appointments"
+    }
+  },
+  "/api/payments": {
+    "target": "http://localhost:8086",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/payments": "/payments"
+    }
+  },
+  "/api/reviews": {
+    "target": "http://localhost:8087",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/reviews": "/reviews"
+    }
+  },
+  "/api/records": {
+    "target": "http://localhost:8089",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/records": "/records"
+    }
+  }
+}

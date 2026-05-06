@@ -1,0 +1,39 @@
+.checkout-shell {
+  padding: 1.5rem;
+}
+
+.checkout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.summary-card {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1.1rem;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.summary-card p {
+  color: var(--ink-700);
+  line-height: 1.7;
+}
+
+.summary-card-accent {
+  background: linear-gradient(135deg, rgba(108, 93, 255, 0.12), rgba(255, 151, 118, 0.14));
+}
+
+.button-row {
+  display: flex;
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 860px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}

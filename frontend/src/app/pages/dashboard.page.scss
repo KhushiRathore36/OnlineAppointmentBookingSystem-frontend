@@ -1,0 +1,187 @@
+.dashboard-panel,
+.stack-card {
+  padding: 1.5rem;
+}
+
+.dashboard-header {
+  margin-bottom: 1.25rem;
+}
+
+.workspace-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.workspace-sidebar {
+  position: sticky;
+  top: 1.25rem;
+  padding: 1.1rem;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(255, 255, 255, 0.82)),
+    radial-gradient(circle at top right, rgba(255, 151, 118, 0.18), transparent 45%);
+  border: 1px solid rgba(255, 186, 148, 0.35);
+}
+
+.sidebar-intro strong,
+.metric-card strong,
+.user-summary strong,
+.appointment-card strong,
+.sidebar-link strong {
+  display: block;
+}
+
+.sidebar-intro p,
+.metric-card span,
+.user-summary span,
+.appointment-card span,
+.appointment-card p,
+.sidebar-link span {
+  color: var(--ink-500);
+  line-height: 1.6;
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.sidebar-link {
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.72);
+  transition: 0.18s ease;
+}
+
+.sidebar-link.active {
+  background: linear-gradient(135deg, rgba(255, 151, 118, 0.18), rgba(255, 208, 130, 0.24));
+  border-color: rgba(255, 151, 118, 0.32);
+  box-shadow: 0 16px 32px rgba(214, 122, 84, 0.12);
+}
+
+.workspace-content {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  padding: 1rem 1.1rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--border);
+}
+
+.user-summary {
+  padding: 0.85rem 1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border);
+}
+
+.appointment-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.appointment-card {
+  padding: 1rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border);
+}
+
+.tag-row,
+.checkbox-line,
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.tag-row {
+  margin: 0.8rem 0 1rem;
+}
+
+.tag {
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(108, 93, 255, 0.08);
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tag-highlight {
+  background: rgba(255, 208, 130, 0.22);
+  color: #8a5a12;
+}
+
+.review-form,
+.form-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.review-form label,
+.form-grid label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.full-width,
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.compact-input {
+  max-width: 180px;
+}
+
+.provider-onboarding {
+  max-width: 920px;
+}
+
+@media (max-width: 1180px) {
+  .workspace-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-sidebar {
+    position: static;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .dashboard-grid,
+  .summary-grid,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

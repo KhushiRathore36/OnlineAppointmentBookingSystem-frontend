@@ -1,0 +1,50 @@
+<div class="app-shell">
+  <div class="ambient ambient-left"></div>
+  <div class="ambient ambient-right"></div>
+
+  <header class="shell-header">
+    <a class="brand" routerLink="/">
+      <span class="brand-mark">
+        <span class="medical-sign" aria-hidden="true"></span>
+      </span>
+      <div>
+        <strong>MediBook</strong>
+        <span>Doctor appointments made simple</span>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/discover" routerLinkActive="active">Doctors</a>
+      <a routerLink="/dashboard" routerLinkActive="active">{{ workspaceLabel() }}</a>
+    </nav>
+
+    <div class="header-actions">
+      @if (isLoggedIn()) {
+        <div class="user-chip">
+          <span class="avatar">{{ (user()?.fullName || 'U').charAt(0) }}</span>
+          <div>
+            <strong>{{ user()?.fullName || 'Signed in' }}</strong>
+            <span>{{ user()?.role || 'Member' }}</span>
+          </div>
+        </div>
+        <button type="button" class="ghost-button" (click)="logout()">Logout</button>
+      } @else {
+        <a class="ghost-button" routerLink="/auth">Login</a>
+      }
+      <a class="primary-button" [routerLink]="isLoggedIn() ? '/dashboard' : '/discover'">{{ primaryCtaLabel() }}</a>
+    </div>
+  </header>
+
+  <main class="shell-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="shell-footer">
+    <div>
+      <strong>MediBook appointment experience</strong>
+      <span>Search doctors, choose a slot, and manage visits from one place.</span>
+    </div>
+    <span>&copy; {{ currentYear }} MediBook</span>
+  </footer>
+</div>
