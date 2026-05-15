@@ -1,0 +1,47 @@
+<svg width="760" height="660" viewBox="0 0 760 660" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="760" height="660" rx="44" fill="url(#paint0_linear)"/>
+  <rect x="30" y="30" width="700" height="600" rx="34" fill="rgba(255,255,255,0.56)"/>
+  <circle cx="168" cy="218" r="98" fill="#FFE5D6"/>
+  <circle cx="540" cy="204" r="106" fill="#E2DBFF"/>
+  <ellipse cx="222" cy="520" rx="146" ry="64" fill="#E9E3FF"/>
+  <ellipse cx="548" cy="518" rx="146" ry="64" fill="#FFF0D6"/>
+  <g>
+    <circle cx="222" cy="178" r="42" fill="#301F47"/>
+    <path d="M162 252C162 217.83 189.83 190 224 190C258.17 190 286 217.83 286 252V368H162V252Z" fill="#FFFFFF"/>
+    <path d="M204 202H244V254C244 265.046 235.046 274 224 274C212.954 274 204 265.046 204 254V202Z" fill="#FFD8C8"/>
+    <path d="M184 154C184 126.386 206.386 104 234 104C261.614 104 284 126.386 284 154V184C284 211.614 261.614 234 234 234C206.386 234 184 211.614 184 184V154Z" fill="#FFD8C8"/>
+    <path d="M161 354H287V486C287 513.614 264.614 536 237 536H211C183.386 536 161 513.614 161 486V354Z" fill="#FBFBFF"/>
+    <path d="M204 356H244L258 420H190L204 356Z" fill="#B6A9FF"/>
+    <rect x="216" y="404" width="16" height="68" rx="8" fill="#8D7EF8"/>
+    <rect x="198" y="354" width="54" height="22" rx="11" fill="#F5F1FF"/>
+    <path d="M188 178C188 133.817 223.817 98 268 98H272V138C272 160.091 254.091 178 232 178H188Z" fill="#301F47"/>
+    <rect x="208" y="430" width="112" height="16" rx="8" fill="#DAD4FF"/>
+  </g>
+  <g>
+    <circle cx="540" cy="168" r="44" fill="#40315E"/>
+    <path d="M476 252C476 216.654 504.654 188 540 188C575.346 188 604 216.654 604 252V378H476V252Z" fill="#FFFFFF"/>
+    <path d="M520 206H560V252C560 263.046 551.046 272 540 272C528.954 272 520 263.046 520 252V206Z" fill="#F8D3C5"/>
+    <path d="M496 150C496 123.49 517.49 102 544 102C570.51 102 592 123.49 592 150V182C592 208.51 570.51 230 544 230C517.49 230 496 208.51 496 182V150Z" fill="#F8D3C5"/>
+    <path d="M474 364H610V496C610 523.614 587.614 546 560 546H524C496.386 546 474 523.614 474 496V364Z" fill="#FFFFFF"/>
+    <path d="M520 364H560L574 428H506L520 364Z" fill="#FFCFA0"/>
+    <rect x="532" y="412" width="16" height="74" rx="8" fill="#F49D59"/>
+    <rect x="510" y="364" width="62" height="22" rx="11" fill="#FFF6EC"/>
+    <path d="M496 160C496 123.49 525.49 94 562 94H590V118C590 141.196 571.196 160 548 160H496Z" fill="#40315E"/>
+    <circle cx="620" cy="478" r="48" fill="#FFFFFF"/>
+    <path d="M620 458V498" stroke="#FF7A59" stroke-width="14" stroke-linecap="round"/>
+    <path d="M640 478H600" stroke="#FF7A59" stroke-width="14" stroke-linecap="round"/>
+  </g>
+  <rect x="72" y="72" width="154" height="82" rx="24" fill="#FFFFFF"/>
+  <circle cx="114" cy="114" r="24" fill="#E8E2FF"/>
+  <path d="M114 101V127" stroke="#6C5DFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M127 114H101" stroke="#6C5DFF" stroke-width="8" stroke-linecap="round"/>
+  <text x="150" y="109" fill="#312550" font-size="22" font-family="Arial" font-weight="700">24/7 Care</text>
+  <text x="150" y="136" fill="#7B7194" font-size="16" font-family="Arial">Trusted medical access</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="58" y1="48" x2="726" y2="598" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF2D5"/>
+      <stop offset="0.5" stop-color="#F3EEFF"/>
+      <stop offset="1" stop-color="#E2D9FF"/>
+    </linearGradient>
+  </defs>
+</svg>

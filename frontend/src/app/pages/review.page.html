@@ -1,0 +1,67 @@
+<section class="review-shell page-card">
+  <div class="section-header">
+    <div>
+      <span class="eyebrow">Review step</span>
+      <h2>Review unlocks after the appointment is completed</h2>
+    </div>
+    <a routerLink="/dashboard">Back to dashboard</a>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="status-message">Loading review details...</div>
+  } @else {
+    @if (message) {
+      <div
+        class="status-message"
+        [class.status-error]="state === 'error'"
+        [class.status-success]="state === 'submitted' || state === 'ready'"
+      >
+        {{ message }}
+      </div>
+    }
+
+    @if (appointment) {
+      <article class="summary-card">
+        <strong>{{ provider?.displayName || ('Provider #' + appointment.providerId) }}</strong>
+        <span>{{ appointment.appointmentDate }} &middot; {{ appointment.startTime }} - {{ appointment.endTime }}</span>
+        <div class="tag-row">
+          <span class="tag">{{ appointment.serviceType }}</span>
+          <span class="tag">{{ appointment.modeOfConsultation }}</span>
+          <span class="tag tag-highlight">{{ appointment.status }}</span>
+        </div>
+      </article>
+
+      @if (canSubmitReview) {
+        <div class="review-form">
+          <label>
+            <span>Rating</span>
+            <select class="pill-input" [(ngModel)]="draft.rating">
+              <option [ngValue]="5">5</option>
+              <option [ngValue]="4">4</option>
+              <option [ngValue]="3">3</option>
+              <option [ngValue]="2">2</option>
+              <option [ngValue]="1">1</option>
+            </select>
+          </label>
+          <label>
+            <span>Comment</span>
+            <textarea class="pill-input" rows="4" [(ngModel)]="draft.comment"></textarea>
+          </label>
+          <label class="checkbox-line">
+            <input type="checkbox" [(ngModel)]="draft.anonymous" />
+            <span>Post anonymously</span>
+          </label>
+          <button type="button" class="primary-button" [disabled]="state === 'submitting'" (click)="submitReview()">
+            {{ state === 'submitting' ? 'Submitting...' : 'Submit review' }}
+          </button>
+        </div>
+      } @else {
+        <div class="status-message">{{ reviewLockedMessage }}</div>
+        <div class="button-row">
+          <a class="primary-button" routerLink="/dashboard">Open dashboard</a>
+          <a class="secondary-button" routerLink="/discover">Book another appointment</a>
+        </div>
+      }
+    }
+  }
+</section>

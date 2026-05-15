@@ -1,0 +1,51 @@
+<section class="checkout-shell page-card">
+  <div class="section-header">
+    <div>
+      <span class="eyebrow">Payment step</span>
+      <h2>Complete your appointment checkout</h2>
+    </div>
+    <a routerLink="/dashboard">Open dashboard</a>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="status-message">Preparing your appointment checkout...</div>
+  } @else {
+    @if (message) {
+      <div class="status-message" [class.status-error]="state === 'error'" [class.status-success]="state === 'paid'">
+        {{ message }}
+      </div>
+    }
+
+    @if (appointment) {
+      <div class="checkout-grid">
+        <article class="summary-card">
+          <span class="eyebrow">Appointment</span>
+          <strong>{{ provider?.displayName || ('Provider #' + appointment.providerId) }}</strong>
+          <p>{{ appointment.appointmentDate }} &middot; {{ appointment.startTime }} - {{ appointment.endTime }}</p>
+          <div class="tag-row">
+            <span class="tag">{{ appointment.serviceType }}</span>
+            <span class="tag">{{ appointment.modeOfConsultation }}</span>
+            <span class="tag tag-highlight">{{ appointment.status }}</span>
+          </div>
+        </article>
+
+        <article class="summary-card summary-card-accent">
+          <span class="eyebrow">Payable now</span>
+          <strong>{{ payableLabel }}</strong>
+          <p>Secure Razorpay checkout opens in the next step.</p>
+        </article>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="primary-button" [disabled]="state === 'processing'" (click)="payNow()">
+          {{ state === 'processing' ? 'Opening payment...' : 'Pay with Razorpay' }}
+        </button>
+        <button type="button" class="secondary-button" [disabled]="state === 'processing'" (click)="cancelBooking()">
+          Cancel booking
+        </button>
+      </div>
+    } @else if (state === 'error') {
+      <div class="status-message status-error">The checkout session could not be opened.</div>
+    }
+  }
+</section>
