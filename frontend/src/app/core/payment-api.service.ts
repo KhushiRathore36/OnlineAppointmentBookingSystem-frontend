@@ -26,4 +26,8 @@ export class PaymentApiService {
   getRevenue() {
     return this.http.get<number>('/api/payments/revenue');
   }
+
+  refund(appointmentId: number, notes: string) {
+    return this.http.post<Payment>('/api/payments/refund', { appointmentId, notes });
+  }
 }

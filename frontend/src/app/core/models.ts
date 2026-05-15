@@ -176,6 +176,30 @@ export interface Payment {
   gatewaySignature?: string;
 }
 
+export interface Notification {
+  notificationId: number;
+  recipientId: number;
+  recipientEmail?: string;
+  type: string;
+  title: string;
+  message: string;
+  channel: string;
+  read: boolean;
+  relatedId?: number;
+  relatedType?: string;
+  createdAt?: string;
+}
+
+export interface BulkNotificationRequest {
+  recipientIds: number[];
+  type: string;
+  title: string;
+  message: string;
+  channel: string;
+  relatedId?: number;
+  relatedType?: string;
+}
+
 export interface CreateOrderRequest {
   appointmentId: number;
   patientId: number;

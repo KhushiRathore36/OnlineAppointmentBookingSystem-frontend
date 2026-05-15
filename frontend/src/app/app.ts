@@ -14,6 +14,7 @@ export class App {
 
   protected readonly user = this.authStore.user;
   protected readonly isLoggedIn = computed(() => !!this.authStore.token());
+  protected readonly isAdmin = computed(() => this.authStore.user()?.role === 'ADMIN');
   protected readonly workspaceLabel = computed(() => {
     const role = this.authStore.user()?.role;
     if (role === 'ADMIN') {

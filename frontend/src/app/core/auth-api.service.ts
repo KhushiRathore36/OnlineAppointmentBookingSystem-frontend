@@ -24,4 +24,20 @@ export class AuthApiService {
   getProfile() {
     return this.http.get<UserProfile>('/api/auth/profile');
   }
+
+  getUsers() {
+    return this.http.get<UserProfile[]>('/api/auth/admin/users');
+  }
+
+  suspendUser(userId: number) {
+    return this.http.put<UserProfile>(`/api/auth/admin/users/${userId}/suspend`, {});
+  }
+
+  reactivateUser(userId: number) {
+    return this.http.put<UserProfile>(`/api/auth/admin/users/${userId}/reactivate`, {});
+  }
+
+  deleteUser(userId: number) {
+    return this.http.delete(`/api/auth/admin/users/${userId}`, { responseType: 'text' });
+  }
 }

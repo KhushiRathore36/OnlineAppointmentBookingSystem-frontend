@@ -5,21 +5,25 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { AppointmentApiService } from '../core/appointment-api.service';
+import { AuthApiService } from '../core/auth-api.service';
 import { AuthStore } from '../core/auth.store';
 import {
   Appointment,
   AvailabilitySlot,
   MedicalRecord,
+  Notification,
   Payment,
   Provider,
   ProviderView,
   Review,
+  UserProfile,
   formatTimeRange,
   toProviderView
 } from '../core/models';
+import { NotificationApiService } from '../core/notification-api.service';
 import { PaymentApiService } from '../core/payment-api.service';
 import { ProviderApiService } from '../core/provider-api.service';
 import { RecordApiService } from '../core/record-api.service';
@@ -28,9 +32,20 @@ import { ScheduleApiService } from '../core/schedule-api.service';
 
 type ReviewDraft = { rating: number; comment: string; anonymous: boolean };
 type RecordDraft = { diagnosis: string; prescription: string; notes: string; followUpDate: string };
+type NotificationAudience = 'ALL' | 'PATIENT' | 'PROVIDER';
 type PatientSection = 'overview' | 'upcoming' | 'history' | 'records' | 'payments' | 'reviews';
 type ProviderSection = 'setup' | 'overview' | 'profile' | 'slots' | 'today' | 'records' | 'reviews';
-type AdminSection = 'overview' | 'providers' | 'analytics' | 'payments';
+type AdminSection =
+  | 'overview'
+  | 'users'
+  | 'providers'
+  | 'appointments'
+  | 'payments'
+  | 'reviews'
+  | 'records'
+  | 'notifications'
+  | 'analytics'
+  | 'reports';
 type DashboardSection = PatientSection | ProviderSection | AdminSection;
 type NavItem = { id: DashboardSection; label: string; note: string };
 
@@ -42,20 +57,24 @@ type NavItem = { id: DashboardSection; label: string; note: string };
 })
 export class DashboardPageComponent implements OnInit {
   private readonly authStore = inject(AuthStore);
+  private readonly authApi = inject(AuthApiService);
   private readonly appointmentApi = inject(AppointmentApiService);
   private readonly providerApi = inject(ProviderApiService);
   private readonly reviewApi = inject(ReviewApiService);
   private readonly recordApi = inject(RecordApiService);
   private readonly scheduleApi = inject(ScheduleApiService);
   private readonly paymentApi = inject(PaymentApiService);
+  private readonly notificationApi = inject(NotificationApiService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
   protected appointments: Appointment[] = [];
+  protected adminUsers: UserProfile[] = [];
   protected providers = new Map<number, ProviderView>();
   protected reviews: Review[] = [];
   protected records: MedicalRecord[] = [];
   protected payments: Payment[] = [];
+  protected notifications: Notification[] = [];
   protected reviewDrafts: Record<number, ReviewDraft> = {};
   protected recordDrafts: Record<number, RecordDraft> = {};
   protected providerProfile: ProviderView | null = null;
@@ -63,6 +82,9 @@ export class DashboardPageComponent implements OnInit {
   protected providerDirectory: ProviderView[] = [];
   protected adminRevenue = 0;
   protected adminAppointmentCounts: Record<number, number> = {};
+  protected notificationAudience: NotificationAudience = 'ALL';
+  protected notificationTitle = '';
+  protected notificationMessage = '';
   protected state: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
   protected actionMessage = '';
   protected providerDate = new Date().toISOString().slice(0, 10);
@@ -141,9 +163,15 @@ export class DashboardPageComponent implements OnInit {
     if (this.role === 'ADMIN') {
       return [
         { id: 'overview', label: 'Overview', note: 'Platform snapshot' },
+        { id: 'users', label: 'Users', note: 'Accounts and access' },
         { id: 'providers', label: 'Providers', note: 'Verification queue' },
-        { id: 'analytics', label: 'Analytics', note: 'Approved provider metrics' },
-        { id: 'payments', label: 'Payments', note: 'Transaction history' }
+        { id: 'appointments', label: 'Appointments', note: 'All lifecycle statuses' },
+        { id: 'payments', label: 'Payments', note: 'Transactions and refunds' },
+        { id: 'reviews', label: 'Reviews', note: 'Moderation queue' },
+        { id: 'records', label: 'Records', note: 'Read-only audit access' },
+        { id: 'notifications', label: 'Notify', note: 'Platform-wide messages' },
+        { id: 'analytics', label: 'Analytics', note: 'Booking and revenue metrics' },
+        { id: 'reports', label: 'Reports', note: 'Financial reconciliation' }
       ];
     }
 
@@ -207,6 +235,39 @@ export class DashboardPageComponent implements OnInit {
 
   protected get adminVerifiedProviders(): ProviderView[] {
     return this.providerDirectory.filter((provider) => provider.verified);
+  }
+
+  protected get adminPatients(): UserProfile[] {
+    return this.adminUsers.filter((user) => user.role === 'PATIENT');
+  }
+
+  protected get adminProviderUsers(): UserProfile[] {
+    return this.adminUsers.filter((user) => user.role === 'PROVIDER');
+  }
+
+  protected get completedRate(): number {
+    if (!this.appointments.length) {
+      return 0;
+    }
+
+    return Math.round((this.appointments.filter((appointment) => appointment.status === 'COMPLETED').length / this.appointments.length) * 100);
+  }
+
+  protected get refundedPayments(): Payment[] {
+    return this.payments.filter((payment) => payment.status === 'REFUNDED' || !!payment.refundedAt);
+  }
+
+  protected get mostBookedSpecializations(): { specialization: string; count: number }[] {
+    const counts = this.appointments.reduce<Record<string, number>>((accumulator, appointment) => {
+      const specialization = this.providers.get(appointment.providerId)?.specialization || 'Unknown';
+      accumulator[specialization] = (accumulator[specialization] || 0) + 1;
+      return accumulator;
+    }, {});
+
+    return Object.entries(counts)
+      .map(([specialization, count]) => ({ specialization, count }))
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 5);
   }
 
   protected loadDashboard(): void {
@@ -496,6 +557,213 @@ export class DashboardPageComponent implements OnInit {
       });
   }
 
+  protected deleteProvider(provider: ProviderView): void {
+    if (this.role !== 'ADMIN') {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${provider.displayName} from the provider directory?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.providerApi
+      .deleteProvider(provider.providerId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Provider deleted successfully.';
+          this.loadDashboard();
+        },
+        error: () => {
+          this.actionMessage = 'Provider deletion failed.';
+        }
+      });
+  }
+
+  protected rejectProvider(provider: ProviderView): void {
+    if (this.role !== 'ADMIN') {
+      return;
+    }
+
+    const confirmed = window.confirm(`Reject ${provider.displayName}'s provider registration?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.providerApi
+      .deleteProvider(provider.providerId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Provider registration rejected and removed.';
+          this.loadDashboard();
+        },
+        error: () => {
+          this.actionMessage = 'Provider rejection failed.';
+        }
+      });
+  }
+
+  protected setUserActive(user: UserProfile, isActive: boolean): void {
+    if (this.role !== 'ADMIN') {
+      return;
+    }
+
+    const request$ = isActive ? this.authApi.reactivateUser(user.userId) : this.authApi.suspendUser(user.userId);
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.actionMessage = isActive ? 'User account reactivated.' : 'User account suspended.';
+        this.loadDashboard();
+      },
+      error: () => {
+        this.actionMessage = 'User account status could not be updated.';
+      }
+    });
+  }
+
+  protected deleteUser(user: UserProfile): void {
+    if (this.role !== 'ADMIN') {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete ${user.fullName}'s account?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.authApi
+      .deleteUser(user.userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'User account deleted.';
+          this.loadDashboard();
+        },
+        error: () => {
+          this.actionMessage = 'User account could not be deleted.';
+        }
+      });
+  }
+
+  protected refundPayment(payment: Payment): void {
+    if (this.role !== 'ADMIN') {
+      return;
+    }
+
+    const confirmed = window.confirm(`Trigger refund for appointment #${payment.appointmentId}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.paymentApi
+      .refund(payment.appointmentId, 'Refund triggered by admin portal')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Refund triggered successfully.';
+          this.loadDashboard();
+        },
+        error: () => {
+          this.actionMessage = 'Refund could not be triggered.';
+        }
+      });
+  }
+
+  protected canRefund(payment: Payment): boolean {
+    return payment.status !== 'REFUNDED' && !payment.refundedAt;
+  }
+
+  protected deleteReview(review: Review): void {
+    if (this.role !== 'ADMIN') {
+      return;
+    }
+
+    const confirmed = window.confirm(`Remove review #${review.reviewId}?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.reviewApi
+      .delete(review.reviewId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Review removed successfully.';
+          this.loadDashboard();
+        },
+        error: () => {
+          this.actionMessage = 'Review could not be removed.';
+        }
+      });
+  }
+
+  protected sendPlatformNotification(): void {
+    if (this.role !== 'ADMIN' || !this.notificationTitle.trim() || !this.notificationMessage.trim()) {
+      return;
+    }
+
+    const recipients = this.adminUsers
+      .filter((user) => user.active !== false)
+      .filter((user) => this.notificationAudience === 'ALL' || user.role === this.notificationAudience)
+      .map((user) => user.userId);
+
+    if (!recipients.length) {
+      this.actionMessage = 'No active recipients found for the selected audience.';
+      return;
+    }
+
+    this.notificationApi
+      .sendBulk({
+        recipientIds: recipients,
+        type: 'REMINDER',
+        title: this.notificationTitle,
+        message: this.notificationMessage,
+        channel: 'APP',
+        relatedType: 'PLATFORM'
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.actionMessage = 'Platform notification sent.';
+          this.notificationTitle = '';
+          this.notificationMessage = '';
+          this.loadDashboard();
+        },
+        error: () => {
+          this.actionMessage = 'Platform notification could not be sent.';
+        }
+      });
+  }
+
+  protected downloadRevenueReport(): void {
+    const rows = [
+      ['Payment ID', 'Appointment ID', 'Patient ID', 'Amount', 'Currency', 'Status', 'Mode', 'Paid At', 'Refunded At'],
+      ...this.payments.map((payment) => [
+        payment.paymentId,
+        payment.appointmentId,
+        payment.patientId,
+        payment.amount,
+        payment.currency || 'INR',
+        payment.status,
+        payment.mode,
+        payment.paidAt || '',
+        payment.refundedAt || ''
+      ])
+    ];
+
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `revenue-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   protected trackedAppointmentCount(providerId: number): number {
     return this.adminAppointmentCounts[providerId] ?? 0;
   }
@@ -605,45 +873,94 @@ export class DashboardPageComponent implements OnInit {
     this.syncDefaultSection();
     this.providerApi
       .getProviders()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (providers) => {
+      .pipe(
+        switchMap((providers) => {
           const mapped = providers.map(toProviderView);
           this.providerDirectory = mapped;
           this.providers = new Map(mapped.map((provider) => [provider.providerId, provider]));
 
-          const appointmentRequests = mapped.length
-            ? forkJoin(
-                mapped.map((provider) =>
-                  this.appointmentApi.getByProvider(provider.providerId)
-                )
-              )
+          const appointmentBuckets$ = mapped.length
+            ? forkJoin(mapped.map((provider) => this.appointmentApi.getByProvider(provider.providerId).pipe(catchError(() => of([])))))
+            : of([]);
+          const recordBuckets$ = mapped.length
+            ? forkJoin(mapped.map((provider) => this.recordApi.getByProvider(provider.providerId).pipe(catchError(() => of([])))))
             : of([]);
 
-          forkJoin({
-            paymentHistory: this.paymentApi.getHistory(),
-            revenue: this.paymentApi.getRevenue(),
-            appointmentBuckets: appointmentRequests
-          })
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-              next: ({ paymentHistory, revenue, appointmentBuckets }) => {
-                this.payments = paymentHistory;
-                this.adminRevenue = revenue;
-                this.adminAppointmentCounts = mapped.reduce<Record<number, number>>((accumulator, provider, index) => {
-                  accumulator[provider.providerId] = appointmentBuckets[index]?.length || 0;
-                  return accumulator;
-                }, {});
-                this.state = 'ready';
-              },
-              error: () => {
-                this.state = 'error';
-              }
-            });
+          return forkJoin({
+            users: this.authApi.getUsers().pipe(catchError(() => of([]))),
+            appointments: this.appointmentApi.getAll().pipe(catchError(() => appointmentBuckets$.pipe(map((buckets) => buckets.flat())))),
+            reviews: this.reviewApi.getAll().pipe(catchError(() => of([]))),
+            records: this.recordApi.getAll().pipe(catchError(() => recordBuckets$.pipe(map((buckets) => buckets.flat())))),
+            paymentHistory: this.paymentApi.getHistory().pipe(catchError(() => of([]))),
+            revenue: this.paymentApi.getRevenue().pipe(catchError(() => of(0))),
+            notifications: this.notificationApi.getAll().pipe(catchError(() => of([]))),
+            appointmentBuckets: appointmentBuckets$
+          });
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: ({ users, appointments, reviews, records, paymentHistory, revenue, notifications, appointmentBuckets }) => {
+          this.adminUsers = users.length ? users : this.buildAdminUserFallback(appointments, paymentHistory);
+          this.appointments = appointments;
+          this.reviews = reviews;
+          this.records = records;
+          this.payments = paymentHistory;
+          this.adminRevenue = revenue;
+          this.notifications = notifications;
+          this.adminAppointmentCounts = this.providerDirectory.reduce<Record<number, number>>((accumulator, provider, index) => {
+            accumulator[provider.providerId] = appointmentBuckets[index]?.length || 0;
+            return accumulator;
+          }, {});
+          this.state = 'ready';
         },
         error: () => {
           this.state = 'error';
         }
       });
+  }
+
+  private buildAdminUserFallback(appointments: Appointment[], payments: Payment[]): UserProfile[] {
+    const userMap = new Map<number, UserProfile>();
+
+    for (const provider of this.providerDirectory) {
+      userMap.set(provider.userId, {
+        userId: provider.userId,
+        fullName: provider.displayName,
+        email: `provider-${provider.userId}@medi-book.local`,
+        phone: '',
+        role: 'PROVIDER',
+        active: true,
+        createdAt: provider.createdAt
+      });
+    }
+
+    for (const appointment of appointments) {
+      if (!userMap.has(appointment.patientId)) {
+        userMap.set(appointment.patientId, {
+          userId: appointment.patientId,
+          fullName: `Patient #${appointment.patientId}`,
+          email: `patient-${appointment.patientId}@medi-book.local`,
+          phone: '',
+          role: 'PATIENT',
+          active: true
+        });
+      }
+    }
+
+    for (const payment of payments) {
+      if (!userMap.has(payment.patientId)) {
+        userMap.set(payment.patientId, {
+          userId: payment.patientId,
+          fullName: `Patient #${payment.patientId}`,
+          email: `patient-${payment.patientId}@medi-book.local`,
+          phone: '',
+          role: 'PATIENT',
+          active: true
+        });
+      }
+    }
+
+    return Array.from(userMap.values());
   }
 }

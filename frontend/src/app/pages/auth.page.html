@@ -34,14 +34,28 @@
     }
 
     @if (mode === 'login') {
-      <form [formGroup]="loginForm" class="auth-form" (ngSubmit)="submitLogin()">
+      <form [formGroup]="loginForm" class="auth-form" autocomplete="off" (ngSubmit)="submitLogin()">
         <label>
           <span>Email</span>
-          <input class="pill-input" type="email" formControlName="email" placeholder="you@example.com" />
+          <input
+            class="pill-input"
+            type="email"
+            formControlName="email"
+            name="medibook-login-email"
+            autocomplete="username"
+            placeholder="you@example.com"
+          />
         </label>
         <label>
           <span>Password</span>
-          <input class="pill-input" type="password" formControlName="password" placeholder="Minimum 6 characters" />
+          <input
+            class="pill-input"
+            type="password"
+            formControlName="password"
+            name="medibook-login-password"
+            autocomplete="current-password"
+            placeholder="Minimum 6 characters"
+          />
         </label>
 
         <button class="primary-button" type="submit" [disabled]="busy">
@@ -55,26 +69,57 @@
         </button>
       </form>
     } @else {
-      <form [formGroup]="registerForm" class="auth-form" (ngSubmit)="submitRegister()">
+      <form
+        #registerNativeForm
+        [formGroup]="registerForm"
+        class="auth-form"
+        autocomplete="off"
+        (ngSubmit)="submitRegister(registerNativeForm)"
+      >
         <label>
           <span>Full name</span>
-          <input class="pill-input" type="text" formControlName="fullName" placeholder="Patient or provider name" />
+          <input
+            class="pill-input"
+            type="text"
+            formControlName="fullName"
+            name="medibook-register-full-name"
+            autocomplete="off"
+            placeholder="Patient or provider name"
+          />
         </label>
         <label>
           <span>Email</span>
-          <input class="pill-input" type="email" formControlName="email" />
+          <input
+            class="pill-input"
+            type="email"
+            formControlName="email"
+            name="medibook-register-email"
+            autocomplete="off"
+          />
         </label>
         <label>
           <span>Phone</span>
-          <input class="pill-input" type="tel" formControlName="phone" />
+          <input
+            class="pill-input"
+            type="tel"
+            formControlName="phone"
+            name="medibook-register-phone"
+            autocomplete="off"
+          />
         </label>
         <label>
           <span>Password</span>
-          <input class="pill-input" type="password" formControlName="password" />
+          <input
+            class="pill-input"
+            type="password"
+            formControlName="password"
+            name="medibook-register-password"
+            autocomplete="new-password"
+          />
         </label>
         <label>
           <span>Role</span>
-          <select class="pill-input" formControlName="role">
+          <select class="pill-input" formControlName="role" name="medibook-register-role" autocomplete="off">
             @for (role of roles; track role) {
               <option [value]="role">{{ role }}</option>
             }

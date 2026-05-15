@@ -52,10 +52,20 @@ export class SelectRolePageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.authStore.setSession(response.token);
-          this.authStore.restoreProfile();
-          this.busyRole = null;
-          void this.router.navigate([role === 'PATIENT' ? '/discover' : '/dashboard']);
+          if (!this.authStore.setSession(response.token)) {
+            this.busyRole = null;
+            this.statusMessage = 'Login token receive nahi hua. Please dubara try karein.';
+            return;
+          }
+
+          this.authStore
+            .loadProfile()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((profile) => {
+              this.busyRole = null;
+              const nextRole = profile?.role ?? role;
+              void this.router.navigate([nextRole === 'PATIENT' ? '/discover' : '/dashboard']);
+            });
         },
         error: (error) => {
           this.busyRole = null;

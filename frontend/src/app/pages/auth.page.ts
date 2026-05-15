@@ -6,7 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthApiService } from '../core/auth-api.service';
 import { AuthStore } from '../core/auth.store';
-import { UserRole } from '../core/models';
+import { RegisterPayload, UserRole } from '../core/models';
 
 @Component({
   selector: 'app-auth-page',
@@ -56,9 +56,15 @@ export class AuthPageComponent {
           return;
         }
 
-        this.authStore.setSession(token);
-        this.authStore.restoreProfile();
-        void this.router.navigate(['/dashboard']);
+        if (!this.authStore.setSession(token)) {
+          this.statusMessage = 'Login token invalid hai. Please login again.';
+          return;
+        }
+
+        this.authStore
+          .loadProfile()
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe(() => void this.router.navigate(['/dashboard']));
       });
   }
 
@@ -70,6 +76,7 @@ export class AuthPageComponent {
   protected submitLogin(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
+      this.statusMessage = 'Please valid email aur minimum 6 character password enter karein.';
       return;
     }
 
@@ -81,10 +88,19 @@ export class AuthPageComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.authStore.setSession(response.token);
-          this.authStore.restoreProfile();
-          this.busy = false;
-          this.router.navigate(['/dashboard']);
+          if (!this.authStore.setSession(response.token)) {
+            this.busy = false;
+            this.statusMessage = 'Login token receive nahi hua. Please dubara login try karein.';
+            return;
+          }
+
+          this.authStore
+            .loadProfile()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+              this.busy = false;
+              void this.router.navigate(['/dashboard']);
+            });
         },
         error: (error) => {
           this.busy = false;
@@ -93,9 +109,14 @@ export class AuthPageComponent {
       });
   }
 
-  protected submitRegister(): void {
+  protected submitRegister(formElement: HTMLFormElement): void {
+    const payload = this.readRegisterPayload(formElement);
+    this.registerForm.patchValue(payload);
+    this.registerForm.updateValueAndValidity();
+
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
+      this.statusMessage = 'Please name, valid email, 10 digit phone, password aur role sahi se fill karein.';
       return;
     }
 
@@ -103,14 +124,29 @@ export class AuthPageComponent {
     this.statusMessage = '';
 
     this.authApi
-      .register(this.registerForm.getRawValue())
+      .register(payload)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.authStore.setSession(response.token);
-          this.authStore.restoreProfile();
-          this.busy = false;
-          this.router.navigate([this.registerForm.getRawValue().role === 'PATIENT' ? '/discover' : '/dashboard']);
+          const { email, role } = payload;
+          const hasSession = this.authStore.setSession(response.token);
+
+          if (!hasSession) {
+            this.mode = 'login';
+            this.loginForm.patchValue({ email });
+            this.busy = false;
+            this.statusMessage = response.message || 'Account created successfully. Please login to continue.';
+            return;
+          }
+
+          this.authStore
+            .loadProfile()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((profile) => {
+              this.busy = false;
+              const nextRole = profile?.role ?? role;
+              void this.router.navigate([nextRole === 'PATIENT' ? '/discover' : '/dashboard']);
+            });
         },
         error: (error) => {
           this.busy = false;
@@ -121,5 +157,18 @@ export class AuthPageComponent {
 
   protected continueWithGoogle(): void {
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  }
+
+  private readRegisterPayload(formElement: HTMLFormElement): RegisterPayload {
+    const formData = new FormData(formElement);
+    const value = (name: string) => String(formData.get(name) ?? '').trim();
+
+    return {
+      fullName: value('medibook-register-full-name'),
+      email: value('medibook-register-email').toLowerCase(),
+      phone: value('medibook-register-phone').replace(/\D/g, ''),
+      password: value('medibook-register-password'),
+      role: (value('medibook-register-role') || 'PATIENT') as UserRole
+    };
   }
 }

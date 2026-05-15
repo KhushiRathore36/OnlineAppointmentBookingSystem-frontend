@@ -15,7 +15,15 @@ export class ReviewApiService {
     return this.http.get<Review[]>(`/api/reviews/patient/${patientId}`);
   }
 
+  getAll() {
+    return this.http.get<Review[]>('/api/reviews');
+  }
+
   create(payload: ReviewRequest) {
     return this.http.post<Review>('/api/reviews', payload);
+  }
+
+  delete(reviewId: number) {
+    return this.http.delete(`/api/reviews/${reviewId}`, { responseType: 'text' });
   }
 }

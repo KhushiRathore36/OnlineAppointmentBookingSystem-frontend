@@ -19,6 +19,10 @@ export class RecordApiService {
     return this.http.get<MedicalRecord>(`/api/records/appointment/${appointmentId}`);
   }
 
+  getAll() {
+    return this.http.get<MedicalRecord[]>('/api/records');
+  }
+
   getByPatient(patientId: number) {
     return this.http.get<MedicalRecord[]>(`/api/records/patient/${patientId}`);
   }

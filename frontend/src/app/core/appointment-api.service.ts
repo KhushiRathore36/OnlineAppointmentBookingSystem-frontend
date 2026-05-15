@@ -15,6 +15,10 @@ export class AppointmentApiService {
     return this.http.get<Appointment>(`/api/appointments/${appointmentId}`);
   }
 
+  getAll() {
+    return this.http.get<Appointment[]>('/api/appointments');
+  }
+
   getByPatient(patientId: number) {
     return this.http.get<Appointment[]>(`/api/appointments/patient/${patientId}`);
   }

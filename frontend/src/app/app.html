@@ -15,7 +15,9 @@
 
     <nav class="nav-links">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
-      <a routerLink="/discover" routerLinkActive="active">Doctors</a>
+      @if (!isAdmin()) {
+        <a routerLink="/discover" routerLinkActive="active">Doctors</a>
+      }
       <a routerLink="/dashboard" routerLinkActive="active">{{ workspaceLabel() }}</a>
     </nav>
 

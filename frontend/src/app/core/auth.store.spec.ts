@@ -6,7 +6,8 @@ import { AuthStore } from './auth.store';
 import { UserProfile } from './models';
 
 describe('AuthStore', () => {
-  let authApi: jasmine.SpyObj<AuthApiService>;
+  let authApi: jest.Mocked<Pick<AuthApiService, 'getProfile'>>;
+  const jwtWithRole = (role = 'PATIENT') => `header.${btoa(JSON.stringify({ role }))}.signature`;
 
   const profile: UserProfile = {
     userId: 1,
@@ -18,7 +19,9 @@ describe('AuthStore', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    authApi = jasmine.createSpyObj<AuthApiService>('AuthApiService', ['getProfile']);
+    authApi = {
+      getProfile: jest.fn()
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -34,12 +37,13 @@ describe('AuthStore', () => {
 
   it('stores and clears the current session', () => {
     const store = TestBed.inject(AuthStore);
+    const token = jwtWithRole();
 
-    store.setSession('session-token');
+    expect(store.setSession(token)).toBe(true);
     store.setProfile(profile);
 
-    expect(localStorage.getItem('doctor-appointment.token')).toBe('session-token');
-    expect(store.token()).toBe('session-token');
+    expect(localStorage.getItem('doctor-appointment.token')).toBe(token);
+    expect(store.token()).toBe(token);
     expect(store.user()).toEqual(profile);
 
     store.clear();
@@ -49,36 +53,38 @@ describe('AuthStore', () => {
     expect(store.user()).toBeNull();
   });
 
-  it('restores a profile when a token exists', () => {
-    localStorage.setItem('doctor-appointment.token', 'session-token');
-    authApi.getProfile.and.returnValue(of(profile));
+  it('loads a profile when a token exists', (done) => {
+    localStorage.setItem('doctor-appointment.token', jwtWithRole());
+    authApi.getProfile.mockReturnValue(of(profile));
 
     const store = TestBed.inject(AuthStore);
-    store.restoreProfile();
-
-    expect(authApi.getProfile).toHaveBeenCalled();
-    expect(store.user()).toEqual(profile);
+    store.loadProfile().subscribe((loadedProfile) => {
+      expect(authApi.getProfile).toHaveBeenCalled();
+      expect(loadedProfile).toEqual(profile);
+      expect(store.user()).toEqual(profile);
+      done();
+    });
   });
 
-  it('clears the session when profile restore fails', () => {
-    localStorage.setItem('doctor-appointment.token', 'expired-token');
-    authApi.getProfile.and.returnValue(throwError(() => new Error('Unauthorized')));
+  it('clears the session when profile loading fails', (done) => {
+    localStorage.setItem('doctor-appointment.token', jwtWithRole());
+    authApi.getProfile.mockReturnValue(throwError(() => new Error('Unauthorized')));
 
     const store = TestBed.inject(AuthStore);
-    store.restoreProfile();
+    store.loadProfile().subscribe((loadedProfile) => {
+      expect(loadedProfile).toBeNull();
+      expect(store.token()).toBeNull();
+      expect(store.user()).toBeNull();
+      expect(localStorage.getItem('doctor-appointment.token')).toBeNull();
+      done();
+    });
+  });
 
+  it('does not store invalid session tokens', () => {
+    const store = TestBed.inject(AuthStore);
+
+    expect(store.setSession('not-a-jwt')).toBe(false);
     expect(store.token()).toBeNull();
-    expect(store.user()).toBeNull();
     expect(localStorage.getItem('doctor-appointment.token')).toBeNull();
-  });
-
-  it('derives the role from a jwt payload before the profile is loaded', () => {
-    const payload = btoa(JSON.stringify({ role: 'PROVIDER' }));
-    const store = TestBed.inject(AuthStore);
-
-    store.setSession(`header.${payload}.signature`);
-
-    expect(store.role()).toBe('PROVIDER');
-    expect(store.isPatient()).toBeFalse();
   });
 });

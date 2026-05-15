@@ -28,6 +28,10 @@ export class ProviderApiService {
     return this.http.put<Provider>(`/api/providers/${providerId}/verify`, {});
   }
 
+  deleteProvider(providerId: number) {
+    return this.http.delete(`/api/providers/${providerId}`, { responseType: 'text' });
+  }
+
   updateAvailability(providerId: number, isAvailable: boolean) {
     const params = new HttpParams().set('isAvailable', isAvailable);
     return this.http.put<Provider>(`/api/providers/${providerId}/availability`, {}, { params });

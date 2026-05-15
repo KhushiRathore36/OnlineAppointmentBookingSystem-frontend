@@ -43,7 +43,7 @@ describe('authInterceptor', () => {
     http.get('/assets/config.json').subscribe();
 
     const request = httpMock.expectOne('/assets/config.json');
-    expect(request.request.headers.has('Authorization')).toBeFalse();
+    expect(request.request.headers.has('Authorization')).toBe(false);
     request.flush({});
   });
 
@@ -53,7 +53,7 @@ describe('authInterceptor', () => {
     http.get('/api/profile').subscribe();
 
     const request = httpMock.expectOne('/api/profile');
-    expect(request.request.headers.has('Authorization')).toBeFalse();
+    expect(request.request.headers.has('Authorization')).toBe(false);
     request.flush({});
   });
 });
