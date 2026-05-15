@@ -1,0 +1,99 @@
+<section class="hero page-card">
+  <div class="hero-copy">
+    <span class="eyebrow">Doctor appointment platform</span>
+    <h1>Book trusted doctor appointments without the usual hassle.</h1>
+    <p>
+      Find the right specialist, choose a convenient time slot, and keep every appointment in one
+      simple dashboard.
+    </p>
+
+    <div class="hero-actions">
+      <a class="primary-button" routerLink="/discover">Book appointment</a>
+      <a class="secondary-button" routerLink="/dashboard">Open dashboard</a>
+    </div>
+
+    <div class="hero-metrics">
+      <article class="metric-card">
+        <strong>Top Doctors</strong>
+        <span>Browse specialists across the most in-demand care categories.</span>
+      </article>
+      <article class="metric-card">
+        <strong>Easy Slots</strong>
+        <span>Choose appointment times that fit naturally into your day.</span>
+      </article>
+      <article class="metric-card">
+        <strong>Quick Access</strong>
+        <span>Track upcoming and past appointments anytime.</span>
+      </article>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <img src="assets/hero-doctor.png" alt="Doctor consultation" />
+
+    <div class="floating-card doctors-online">
+      <strong>Smart booking</strong>
+      <span>Browse doctors, compare options, and confirm your visit in minutes.</span>
+    </div>
+
+    <div class="floating-card signal-card">
+      <strong>Better care planning</strong>
+      <span>Keep your visits, follow-ups, and reviews neatly organized.</span>
+    </div>
+  </div>
+</section>
+
+<section class="content-grid">
+  <div class="page-card feature-panel">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow">Why MediBook</span>
+        <h2>Everything is focused on doctor appointments.</h2>
+      </div>
+    </div>
+
+    <div class="feature-list">
+      <article class="soft-card">
+        <strong>Easy sign in</strong>
+        <p>Create your account and start booking and managing consultations right away.</p>
+      </article>
+      <article class="soft-card">
+        <strong>Doctor discovery</strong>
+        <p>Find specialists by expertise, clinic, and availability without extra clutter.</p>
+      </article>
+      <article class="soft-card">
+        <strong>Appointment management</strong>
+        <p>Book visits, check status, manage your schedule, and leave a review after care.</p>
+      </article>
+    </div>
+  </div>
+
+  <div class="page-card featured-panel">
+    <div class="section-header">
+      <div>
+        <span class="eyebrow">Featured providers</span>
+        <h2>Explore doctors ready for appointments.</h2>
+      </div>
+      <a routerLink="/discover">See all</a>
+    </div>
+
+    @if (loadState() === 'loading') {
+      <div class="status-message">Loading doctors...</div>
+    } @else if (loadState() === 'error') {
+      <div class="status-message status-error">
+        Doctors could not be displayed right now. Please try again shortly.
+      </div>
+    } @else {
+      <div class="doctor-list">
+        @for (doctor of doctors(); track doctor.providerId) {
+          <article class="doctor-card">
+            <div class="doctor-avatar" [style.background]="doctor.accent">{{ doctor.initials }}</div>
+            <strong>{{ doctor.displayName }}</strong>
+            <span>{{ doctor.specialization }}</span>
+            <p>{{ doctor.clinicName }} &middot; {{ doctor.clinicAddress }}</p>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>

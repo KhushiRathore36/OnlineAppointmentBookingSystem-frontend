@@ -1,0 +1,28 @@
+<section class="select-role-shell">
+  <div class="page-card select-role-card">
+    <span class="eyebrow">Google sign in</span>
+    <h1>Continue as patient ya doctor</h1>
+    <p>
+      <strong>{{ email || 'Your Google account' }}</strong> ke liye role choose kijiye. Isse aapka dashboard aur booking flow set ho jayega.
+    </p>
+
+    @if (statusMessage) {
+      <div class="status-message status-error">{{ statusMessage }}</div>
+    }
+
+    <div class="role-grid">
+      @for (option of roles; track option.role) {
+        <button
+          type="button"
+          class="role-card"
+          [disabled]="!!busyRole || !email"
+          (click)="chooseRole(option.role)"
+        >
+          <strong>{{ option.label }}</strong>
+          <span>{{ option.note }}</span>
+          <small>{{ busyRole === option.role ? 'Saving...' : 'Continue' }}</small>
+        </button>
+      }
+    </div>
+  </div>
+</section>

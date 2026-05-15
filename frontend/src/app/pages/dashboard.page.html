@@ -1,0 +1,1058 @@
+<section class="page-card dashboard-panel">
+  <div class="section-header dashboard-header">
+    <div>
+      <span class="eyebrow">{{ dashboardEyebrow }}</span>
+      <h2>{{ dashboardTitle }}</h2>
+    </div>
+    @if (user) {
+      <div class="user-summary">
+        <strong>{{ user.fullName }}</strong>
+        <span>{{ user.email }} &middot; {{ user.role }}</span>
+      </div>
+    }
+  </div>
+
+  @if (!user) {
+    <div class="status-message">
+      Please sign in to access the workspace.
+      <a routerLink="/auth">Login now</a>
+    </div>
+  } @else {
+    @if (actionMessage) {
+      <div class="status-message status-success">{{ actionMessage }}</div>
+    }
+
+    @if (state === 'loading') {
+      <div class="status-message">Loading workspace...</div>
+    } @else if (state === 'error') {
+      <div class="status-message status-error">
+        Workspace data could not be loaded right now. Please try again shortly.
+      </div>
+    } @else {
+      <div class="workspace-shell">
+        <aside class="workspace-sidebar">
+          <div class="sidebar-intro">
+            <span class="eyebrow">Workspace menu</span>
+            <strong>{{ activeNavItem?.label || 'Dashboard' }}</strong>
+            <p>{{ activeNavItem?.note || 'Choose a section from the sidebar.' }}</p>
+          </div>
+
+          <nav class="sidebar-nav">
+            @for (item of sidebarItems; track item.id) {
+              <button
+                type="button"
+                class="sidebar-link"
+                [class.active]="isActiveSection(item.id)"
+                (click)="setActiveSection(item.id)"
+              >
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.note }}</span>
+              </button>
+            }
+          </nav>
+        </aside>
+
+        <div class="workspace-content">
+          @if (user.role === 'PATIENT') {
+            @if (isActiveSection('overview')) {
+              <div class="summary-grid">
+                <article class="metric-card">
+                  <strong>{{ upcomingAppointments.length }}</strong>
+                  <span>Upcoming appointments</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ historyAppointments.length }}</strong>
+                  <span>Past visits</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ records.length }}</strong>
+                  <span>Medical records received</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ payments.length }}</strong>
+                  <span>Payments tracked</span>
+                </article>
+              </div>
+
+              <div class="dashboard-grid patient-overview-grid">
+                <section class="page-card stack-card">
+                  <div class="section-header">
+                    <div>
+                      <span class="eyebrow">Upcoming</span>
+                      <h3>Next scheduled visits</h3>
+                    </div>
+                    <a routerLink="/discover">Book more</a>
+                  </div>
+
+                  @if (!upcomingAppointments.length) {
+                    <div class="status-message">There are no scheduled appointments yet.</div>
+                  } @else {
+                    <div class="appointment-list">
+                      @for (appointment of upcomingAppointments.slice(0, 3); track appointment.appointmentId) {
+                        <article class="appointment-card">
+                          <strong>{{ providerName(appointment.providerId) }}</strong>
+                          <span>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</span>
+                          <p>{{ providerMeta(appointment.providerId) }}</p>
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+
+                <section class="page-card stack-card">
+                  <div class="section-header">
+                    <div>
+                      <span class="eyebrow">Latest records</span>
+                      <h3>Recent prescriptions and notes</h3>
+                    </div>
+                  </div>
+
+                  @if (!records.length) {
+                    <div class="status-message">Medical records created by your provider will appear here.</div>
+                  } @else {
+                    <div class="appointment-list">
+                      @for (record of records.slice(0, 3); track record.recordId) {
+                        <article class="appointment-card">
+                          <strong>Appointment #{{ record.appointmentId }}</strong>
+                          <span>Diagnosis: {{ record.diagnosis }}</span>
+                          <p>{{ record.prescription }}</p>
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+              </div>
+            }
+
+            @if (isActiveSection('upcoming')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Upcoming</span>
+                    <h3>Scheduled appointments</h3>
+                  </div>
+                  <a routerLink="/discover">Book more</a>
+                </div>
+
+                @if (!upcomingAppointments.length) {
+                  <div class="status-message">There are no scheduled appointments yet.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (appointment of upcomingAppointments; track appointment.appointmentId) {
+                      <article class="appointment-card">
+                        <div>
+                          <strong>{{ providerName(appointment.providerId) }}</strong>
+                          <span>{{ providerMeta(appointment.providerId) }}</span>
+                        </div>
+                        <p>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</p>
+                        <div class="tag-row">
+                          <span class="tag">{{ appointment.modeOfConsultation }}</span>
+                          <span class="tag">{{ appointment.serviceType }}</span>
+                          <span class="tag tag-highlight">{{ appointment.status }}</span>
+                        </div>
+                        <button type="button" class="secondary-button" (click)="cancel(appointment.appointmentId)">
+                          Cancel appointment
+                        </button>
+
+                      </article>
+                    }
+                  </div>
+                }
+
+                <div class="section-header compact-section-header">
+                  <div>
+                    <span class="eyebrow">Verified providers</span>
+                    <h3>Approved directory</h3>
+                  </div>
+                </div>
+
+                @if (!adminVerifiedProviders.length) {
+                  <div class="status-message">Verified providers will appear here after approval.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (provider of adminVerifiedProviders; track provider.providerId) {
+                      <article class="appointment-card">
+                        <strong>{{ provider.displayName }}</strong>
+                        <span>{{ provider.specialization }} &middot; Rating {{ provider.avgRating | number: '1.1-1' }}</span>
+                        <p>{{ trackedAppointmentCount(provider.providerId) }} appointments tracked for this provider.</p>
+                        <button type="button" class="danger-button" (click)="deleteProvider(provider)">
+                          Delete provider
+                        </button>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('history')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">History</span>
+                    <h3>Completed or cancelled visits</h3>
+                  </div>
+                </div>
+
+                @if (!historyAppointments.length) {
+                  <div class="status-message">Past appointments will appear here.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (appointment of historyAppointments; track appointment.appointmentId) {
+                      <article class="appointment-card">
+                        <div>
+                          <strong>{{ providerName(appointment.providerId) }}</strong>
+                          <span>{{ providerMeta(appointment.providerId) }}</span>
+                        </div>
+                        <p>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</p>
+                        <div class="tag-row">
+                          <span class="tag">{{ appointment.serviceType }}</span>
+                          <span class="tag">{{ appointment.status }}</span>
+                        </div>
+
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('records')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Records</span>
+                    <h3>Electronic records and prescriptions</h3>
+                  </div>
+                </div>
+
+                @if (!records.length) {
+                  <div class="status-message">Medical records created by your provider will appear here.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (record of records; track record.recordId) {
+                      <article class="appointment-card">
+                        <strong>Appointment #{{ record.appointmentId }}</strong>
+                        <span>Diagnosis: {{ record.diagnosis }}</span>
+                        <p>{{ record.prescription }}</p>
+                        <span>{{ record.notes }}</span>
+                        @if (record.followUpDate) {
+                          <div class="tag-row">
+                            <span class="tag">Follow-up {{ record.followUpDate }}</span>
+                          </div>
+                        }
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('payments')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Payments</span>
+                    <h3>Receipts and transaction history</h3>
+                  </div>
+                </div>
+
+                @if (!payments.length) {
+                  <div class="status-message">Payments will appear here after online checkout is used.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (payment of payments; track payment.paymentId) {
+                      <article class="appointment-card">
+                        <strong>Appointment #{{ payment.appointmentId }}</strong>
+                        <span>{{ payment.mode }} &middot; {{ payment.status }}</span>
+                        <p>{{ payment.currency || 'INR' }} {{ payment.amount }}</p>
+                        @if (payment.transactionId) {
+                          <span>Txn: {{ payment.transactionId }}</span>
+                        }
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('reviews')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Reviews</span>
+                    <h3>Review your completed appointments</h3>
+                  </div>
+                </div>
+
+                @if (!reviewableAppointments.length) {
+                  <div class="status-message">Completed appointments will appear here when they are ready for review.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (appointment of reviewableAppointments; track appointment.appointmentId) {
+                      <article class="appointment-card">
+                        <div>
+                          <strong>{{ providerName(appointment.providerId) }}</strong>
+                          <span>{{ providerMeta(appointment.providerId) }}</span>
+                        </div>
+                        <p>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</p>
+                        <div class="tag-row">
+                          <span class="tag">{{ appointment.serviceType }}</span>
+                          <span class="tag">{{ appointment.modeOfConsultation }}</span>
+                          <span class="tag tag-highlight">{{ appointment.status }}</span>
+                        </div>
+
+                        @if (canReviewAppointment(appointment)) {
+                          <div class="review-form">
+                            <label>
+                              <span>Rating</span>
+                              <select class="pill-input" [(ngModel)]="draftFor(appointment.appointmentId).rating">
+                                <option [ngValue]="5">5</option>
+                                <option [ngValue]="4">4</option>
+                                <option [ngValue]="3">3</option>
+                                <option [ngValue]="2">2</option>
+                                <option [ngValue]="1">1</option>
+                              </select>
+                            </label>
+                            <label>
+                              <span>Comment</span>
+                              <textarea
+                                class="pill-input"
+                                rows="3"
+                                [(ngModel)]="draftFor(appointment.appointmentId).comment"
+                              ></textarea>
+                            </label>
+                            <label class="checkbox-line">
+                              <input type="checkbox" [(ngModel)]="draftFor(appointment.appointmentId).anonymous" />
+                              <span>Post anonymously</span>
+                            </label>
+                            <button type="button" class="primary-button" (click)="submitReview(appointment)">
+                              Submit review
+                            </button>
+                          </div>
+                        } @else {
+                          <div class="status-message">A review has already been submitted for this appointment.</div>
+                        }
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+          } @else if (user.role === 'PROVIDER') {
+            @if (isActiveSection('setup')) {
+              <section class="page-card stack-card provider-onboarding">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Provider setup</span>
+                    <h3>Complete your professional profile before publishing slots</h3>
+                  </div>
+                </div>
+
+                <div class="status-message">
+                  Your account exists as a provider, but your provider profile has not been created yet. Fill in these details once, then you will be able to create recurring availability.
+                </div>
+
+                <form class="form-grid" [formGroup]="providerProfileForm">
+                  <label>
+                    <span>Specialization</span>
+                    <input class="pill-input" type="text" formControlName="specialization" />
+                  </label>
+                  <label>
+                    <span>Qualification</span>
+                    <input class="pill-input" type="text" formControlName="qualification" />
+                  </label>
+                  <label>
+                    <span>Experience years</span>
+                    <input class="pill-input" type="number" formControlName="experienceYears" />
+                  </label>
+                  <label>
+                    <span>Clinic name</span>
+                    <input class="pill-input" type="text" formControlName="clinicName" />
+                  </label>
+                  <label class="full-span">
+                    <span>Clinic address</span>
+                    <input class="pill-input" type="text" formControlName="clinicAddress" />
+                  </label>
+                  <label class="full-span">
+                    <span>Bio</span>
+                    <textarea class="pill-input" rows="4" formControlName="bio"></textarea>
+                  </label>
+                </form>
+
+                <button type="button" class="primary-button" (click)="saveProviderProfile()">Save provider profile</button>
+              </section>
+            }
+
+            @if (providerProfile && isActiveSection('overview')) {
+              <div class="summary-grid">
+                <article class="metric-card">
+                  <strong>{{ providerProfile.specialization }}</strong>
+                  <span>{{ providerProfile.clinicName }}</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ providerProfile.verified ? 'Verified' : 'Pending verification' }}</strong>
+                  <span>{{ providerProfile.available ? 'Open for bookings' : 'Temporarily unavailable' }}</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ providerUpcomingAppointments.length }}</strong>
+                  <span>Upcoming appointments tracked</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ reviews.length ? (providerProfile.avgRating | number: '1.1-1') : '0.0' }}</strong>
+                  <span>Average patient rating</span>
+                </article>
+              </div>
+
+              <div class="dashboard-grid provider-overview-grid">
+                <section class="page-card stack-card">
+                  <div class="section-header">
+                    <div>
+                      <span class="eyebrow">Today</span>
+                      <h3>Appointment schedule</h3>
+                    </div>
+                  </div>
+
+                  @if (!providerTodayAppointments.length) {
+                    <div class="status-message">No appointments are scheduled for today.</div>
+                  } @else {
+                    <div class="appointment-list">
+                      @for (appointment of providerTodayAppointments.slice(0, 3); track appointment.appointmentId) {
+                        <article class="appointment-card">
+                          <strong>Patient #{{ appointment.patientId }}</strong>
+                          <span>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</span>
+                          <p>{{ appointment.serviceType }} &middot; {{ appointment.status }}</p>
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+
+                <section class="page-card stack-card">
+                  <div class="section-header">
+                    <div>
+                      <span class="eyebrow">Reviews</span>
+                      <h3>Recent patient feedback</h3>
+                    </div>
+                  </div>
+
+                  @if (!reviews.length) {
+                    <div class="status-message">Reviews will appear here after completed appointments are rated.</div>
+                  } @else {
+                    <div class="appointment-list">
+                      @for (review of reviews.slice(0, 3); track review.reviewId) {
+                        <article class="appointment-card">
+                          <strong>{{ review.rating }} / 5</strong>
+                          <span>Appointment #{{ review.appointmentId }}</span>
+                          <p>{{ review.comment || 'No written comment provided.' }}</p>
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+              </div>
+            }
+
+            @if (providerProfile && isActiveSection('profile')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Profile and availability</span>
+                    <h3>Manage public provider details</h3>
+                  </div>
+                </div>
+
+                <form class="form-grid" [formGroup]="providerProfileForm">
+                  <label>
+                    <span>Specialization</span>
+                    <input class="pill-input" type="text" formControlName="specialization" />
+                  </label>
+                  <label>
+                    <span>Qualification</span>
+                    <input class="pill-input" type="text" formControlName="qualification" />
+                  </label>
+                  <label>
+                    <span>Experience years</span>
+                    <input class="pill-input" type="number" formControlName="experienceYears" />
+                  </label>
+                  <label>
+                    <span>Clinic name</span>
+                    <input class="pill-input" type="text" formControlName="clinicName" />
+                  </label>
+                  <label class="full-span">
+                    <span>Clinic address</span>
+                    <input class="pill-input" type="text" formControlName="clinicAddress" />
+                  </label>
+                  <label class="full-span">
+                    <span>Bio</span>
+                    <textarea class="pill-input" rows="4" formControlName="bio"></textarea>
+                  </label>
+                </form>
+
+                <div class="button-row">
+                  <button type="button" class="primary-button" (click)="saveProviderProfile()">Update profile</button>
+                  <button type="button" class="secondary-button" (click)="updateProviderAvailability(!providerProfile.available)">
+                    {{ providerProfile.available ? 'Pause bookings' : 'Resume bookings' }}
+                  </button>
+                </div>
+              </section>
+            }
+
+            @if (providerProfile && isActiveSection('slots')) {
+              <div class="dashboard-grid provider-slots-grid">
+                <section class="page-card stack-card">
+                  <div class="section-header">
+                    <div>
+                      <span class="eyebrow">Weekly availability</span>
+                      <h3>Create individual or recurring slots</h3>
+                    </div>
+                  </div>
+
+                  <form class="form-grid" [formGroup]="slotForm">
+                    <label>
+                      <span>Start date</span>
+                      <input class="pill-input" type="date" formControlName="startDate" />
+                    </label>
+                    <label>
+                      <span>End date</span>
+                      <input class="pill-input" type="date" formControlName="endDate" />
+                    </label>
+                    <label>
+                      <span>Start time</span>
+                      <input class="pill-input" type="time" formControlName="startTime" />
+                    </label>
+                    <label>
+                      <span>End time</span>
+                      <input class="pill-input" type="time" formControlName="endTime" />
+                    </label>
+                    <label>
+                      <span>Slot duration</span>
+                      <select class="pill-input" formControlName="durationMinutes">
+                        <option [ngValue]="15">15 min</option>
+                        <option [ngValue]="20">20 min</option>
+                        <option [ngValue]="30">30 min</option>
+                        <option [ngValue]="45">45 min</option>
+                        <option [ngValue]="60">60 min</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Recurrence</span>
+                      <select class="pill-input" formControlName="recurrence">
+                        <option value="NONE">One day only</option>
+                        <option value="DAILY">Daily</option>
+                        <option value="WEEKLY">Weekly</option>
+                      </select>
+                    </label>
+                  </form>
+
+                  <button type="button" class="primary-button" (click)="createSlots()">Publish slots</button>
+                </section>
+
+                <section class="page-card stack-card">
+                  <div class="section-header">
+                    <div>
+                      <span class="eyebrow">Slot management</span>
+                      <h3>Block or release schedule entries</h3>
+                    </div>
+                    <input class="pill-input compact-input" type="date" [(ngModel)]="providerDate" (change)="refreshProviderSlots()" />
+                  </div>
+
+                  @if (!providerDaySlots.length) {
+                    <div class="status-message">No slots found for this date yet.</div>
+                  } @else {
+                    <div class="appointment-list">
+                      @for (slot of providerDaySlots; track slot.slotId) {
+                        <article class="appointment-card">
+                          <strong>{{ slotRange(slot) }}</strong>
+                          <span>{{ slot.durationMinutes }} min &middot; {{ slot.status }}</span>
+                          <div class="tag-row">
+                            <span class="tag">{{ slot.recurrence || 'NONE' }}</span>
+                          </div>
+                          @if (slot.status !== 'BOOKED') {
+                            <button type="button" class="secondary-button" (click)="toggleSlotStatus(slot)">
+                              {{ slot.status === 'BLOCKED' ? 'Release slot' : 'Block slot' }}
+                            </button>
+                          }
+                        </article>
+                      }
+                    </div>
+                  }
+                </section>
+              </div>
+            }
+
+            @if (providerProfile && isActiveSection('today')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Today</span>
+                    <h3>Appointment schedule</h3>
+                  </div>
+                </div>
+
+                @if (!providerTodayAppointments.length) {
+                  <div class="status-message">No appointments are scheduled for today.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (appointment of providerTodayAppointments; track appointment.appointmentId) {
+                      <article class="appointment-card">
+                        <strong>Patient #{{ appointment.patientId }}</strong>
+                        <span>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</span>
+                        <div class="tag-row">
+                          <span class="tag">{{ appointment.serviceType }}</span>
+                          <span class="tag">{{ appointment.modeOfConsultation }}</span>
+                          <span class="tag tag-highlight">{{ appointment.status }}</span>
+                        </div>
+                        @if (appointment.status === 'SCHEDULED') {
+                          <button type="button" class="primary-button" (click)="completeAppointment(appointment.appointmentId)">
+                            Mark completed
+                          </button>
+                        }
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (providerProfile && isActiveSection('records')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Records</span>
+                    <h3>Create or update electronic medical records</h3>
+                  </div>
+                </div>
+
+                @if (!providerUpcomingAppointments.length) {
+                  <div class="status-message">Appointments will appear here once bookings start coming in.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (appointment of providerUpcomingAppointments; track appointment.appointmentId) {
+                      <article class="appointment-card">
+                        <strong>Appointment #{{ appointment.appointmentId }}</strong>
+                        <span>
+                          Patient #{{ appointment.patientId }} &middot; {{ appointment.appointmentDate }} &middot;
+                          {{ timeRange(appointment) }}
+                        </span>
+                        <div class="tag-row">
+                          <span class="tag">{{ appointment.status }}</span>
+                          <span class="tag">{{ appointment.serviceType }}</span>
+                        </div>
+
+                        <div class="review-form">
+                          <label>
+                            <span>Diagnosis</span>
+                            <input class="pill-input" type="text" [(ngModel)]="providerRecordDraft(appointment).diagnosis" />
+                          </label>
+                          <label>
+                            <span>Prescription</span>
+                            <textarea
+                              class="pill-input"
+                              rows="2"
+                              [(ngModel)]="providerRecordDraft(appointment).prescription"
+                            ></textarea>
+                          </label>
+                          <label>
+                            <span>Clinical notes</span>
+                            <textarea class="pill-input" rows="3" [(ngModel)]="providerRecordDraft(appointment).notes"></textarea>
+                          </label>
+                          <label>
+                            <span>Follow-up date</span>
+                            <input class="pill-input" type="date" [(ngModel)]="providerRecordDraft(appointment).followUpDate" />
+                          </label>
+                          <button type="button" class="primary-button" (click)="submitMedicalRecord(appointment)">
+                            {{ recordExists(appointment.appointmentId) ? 'Update record' : 'Create record' }}
+                          </button>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (providerProfile && isActiveSection('reviews')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Patient feedback</span>
+                    <h3>Reviews and ratings</h3>
+                  </div>
+                </div>
+
+                @if (!reviews.length) {
+                  <div class="status-message">Reviews will appear here after completed appointments are rated.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (review of reviews; track review.reviewId) {
+                      <article class="appointment-card">
+                        <strong>{{ review.rating }} / 5</strong>
+                        <span>Appointment #{{ review.appointmentId }}</span>
+                        <p>{{ review.comment || 'No written comment provided.' }}</p>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+          } @else {
+            @if (isActiveSection('overview')) {
+              <div class="summary-grid">
+                <article class="metric-card">
+                  <strong>{{ adminUsers.length }}</strong>
+                  <span>Total user accounts</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ appointments.length }}</strong>
+                  <span>Total bookings</span>
+                </article>
+                <article class="metric-card">
+                  <strong>{{ completedRate }}%</strong>
+                  <span>Completion rate</span>
+                </article>
+                <article class="metric-card">
+                  <strong>INR {{ adminRevenue }}</strong>
+                  <span>Total revenue</span>
+                </article>
+              </div>
+            }
+
+            @if (isActiveSection('users')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">User accounts</span>
+                    <h3>Patients, providers, and account access</h3>
+                  </div>
+                </div>
+
+                @if (!adminUsers.length) {
+                  <div class="status-message">No user accounts were found.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (account of adminUsers; track account.userId) {
+                      <article class="appointment-card">
+                        <strong>{{ account.fullName }}</strong>
+                        <span>{{ account.email }} &middot; {{ account.role }}</span>
+                        <p>{{ account.phone || 'No phone saved' }}</p>
+                        <div class="tag-row">
+                          <span class="tag">{{ account.active === false ? 'Suspended' : 'Active' }}</span>
+                          @if (account.createdAt) {
+                            <span class="tag">Joined {{ account.createdAt | date: 'mediumDate' }}</span>
+                          }
+                        </div>
+                        <div class="button-row">
+                          @if (account.active === false) {
+                            <button type="button" class="secondary-button" (click)="setUserActive(account, true)">
+                              Reactivate
+                            </button>
+                          } @else {
+                            <button type="button" class="secondary-button" (click)="setUserActive(account, false)">
+                              Suspend
+                            </button>
+                          }
+                          <button type="button" class="danger-button" (click)="deleteUser(account)">
+                            Delete
+                          </button>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('providers')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Provider verification</span>
+                    <h3>Review new provider registrations</h3>
+                  </div>
+                </div>
+
+                @if (!adminPendingProviders.length) {
+                  <div class="status-message">No pending provider verifications right now.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (provider of adminPendingProviders; track provider.providerId) {
+                      <article class="appointment-card">
+                        <strong>{{ provider.displayName }}</strong>
+                        <span>{{ provider.specialization }} &middot; {{ provider.clinicName }}</span>
+                        <p>{{ provider.shortQualification }}</p>
+                        <div class="button-row">
+                          <button type="button" class="primary-button" (click)="verifyProvider(provider.providerId)">
+                            Verify provider
+                          </button>
+                          <button type="button" class="danger-button" (click)="rejectProvider(provider)">
+                            Reject
+                          </button>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('appointments')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Appointments</span>
+                    <h3>All platform bookings and lifecycle status</h3>
+                  </div>
+                </div>
+
+                @if (!appointments.length) {
+                  <div class="status-message">Appointments will appear here once bookings start.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (appointment of appointments; track appointment.appointmentId) {
+                      <article class="appointment-card">
+                        <strong>Appointment #{{ appointment.appointmentId }}</strong>
+                        <span>
+                          {{ providerName(appointment.providerId) }} &middot; Patient #{{ appointment.patientId }}
+                        </span>
+                        <p>{{ appointment.appointmentDate }} &middot; {{ timeRange(appointment) }}</p>
+                        <div class="tag-row">
+                          <span class="tag tag-highlight">{{ appointment.status }}</span>
+                          <span class="tag">{{ appointment.serviceType }}</span>
+                          <span class="tag">{{ appointment.modeOfConsultation }}</span>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('payments')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Payments</span>
+                    <h3>Transactions and refund actions</h3>
+                  </div>
+                </div>
+
+                @if (!payments.length) {
+                  <div class="status-message">Payments will appear here once transactions start processing.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (payment of payments; track payment.paymentId) {
+                      <article class="appointment-card">
+                        <strong>Payment #{{ payment.paymentId }}</strong>
+                        <span>Appointment #{{ payment.appointmentId }} &middot; Patient #{{ payment.patientId }}</span>
+                        <p>{{ payment.currency || 'INR' }} {{ payment.amount }} &middot; {{ payment.mode }}</p>
+                        <div class="tag-row">
+                          <span class="tag tag-highlight">{{ payment.status }}</span>
+                          @if (payment.transactionId) {
+                            <span class="tag">Txn {{ payment.transactionId }}</span>
+                          }
+                          @if (payment.refundedAt) {
+                            <span class="tag">Refunded {{ payment.refundedAt | date: 'mediumDate' }}</span>
+                          }
+                        </div>
+                        @if (canRefund(payment)) {
+                          <button type="button" class="danger-button" (click)="refundPayment(payment)">
+                            Trigger refund
+                          </button>
+                        }
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('reviews')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Reviews</span>
+                    <h3>Moderate provider reviews</h3>
+                  </div>
+                </div>
+
+                @if (!reviews.length) {
+                  <div class="status-message">Reviews will appear here after patients submit feedback.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (review of reviews; track review.reviewId) {
+                      <article class="appointment-card">
+                        <strong>{{ review.rating }} / 5 for {{ providerName(review.providerId) }}</strong>
+                        <span>Review #{{ review.reviewId }} &middot; Appointment #{{ review.appointmentId }}</span>
+                        <p>{{ review.comment || 'No written comment provided.' }}</p>
+                        <div class="tag-row">
+                          <span class="tag">Patient #{{ review.patientId }}</span>
+                          <span class="tag">{{ review.anonymous ? 'Anonymous' : 'Named' }}</span>
+                          <span class="tag">{{ review.verified ? 'Verified' : 'Unverified' }}</span>
+                        </div>
+                        <button type="button" class="danger-button" (click)="deleteReview(review)">
+                          Remove review
+                        </button>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('records')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Medical records</span>
+                    <h3>Read-only audit access</h3>
+                  </div>
+                </div>
+
+                @if (!records.length) {
+                  <div class="status-message">Medical records will appear here after providers create them.</div>
+                } @else {
+                  <div class="appointment-list">
+                    @for (record of records; track record.recordId) {
+                      <article class="appointment-card">
+                        <strong>Record #{{ record.recordId }}</strong>
+                        <span>
+                          Appointment #{{ record.appointmentId }} &middot; Patient #{{ record.patientId }} &middot;
+                          {{ providerName(record.providerId) }}
+                        </span>
+                        <p>Diagnosis: {{ record.diagnosis }}</p>
+                        <p>Prescription: {{ record.prescription }}</p>
+                        <span>{{ record.notes }}</span>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('notifications')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Notifications</span>
+                    <h3>Send platform-wide messages</h3>
+                  </div>
+                </div>
+
+                <form class="form-grid">
+                  <label>
+                    <span>Audience</span>
+                    <select class="pill-input" [(ngModel)]="notificationAudience" name="notificationAudience">
+                      <option value="ALL">All users</option>
+                      <option value="PATIENT">Patients</option>
+                      <option value="PROVIDER">Providers</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Title</span>
+                    <input class="pill-input" type="text" [(ngModel)]="notificationTitle" name="notificationTitle" />
+                  </label>
+                  <label class="full-span">
+                    <span>Message</span>
+                    <textarea class="pill-input" rows="4" [(ngModel)]="notificationMessage" name="notificationMessage"></textarea>
+                  </label>
+                </form>
+                <button type="button" class="primary-button" (click)="sendPlatformNotification()">
+                  Send notification
+                </button>
+
+                @if (notifications.length) {
+                  <div class="appointment-list">
+                    @for (notification of notifications.slice(0, 5); track notification.notificationId) {
+                      <article class="appointment-card">
+                        <strong>{{ notification.title }}</strong>
+                        <span>{{ notification.channel }} &middot; {{ notification.type }}</span>
+                        <p>{{ notification.message }}</p>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+            }
+
+            @if (isActiveSection('analytics')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Platform analytics</span>
+                    <h3>Operational snapshot</h3>
+                  </div>
+                </div>
+
+                <div class="summary-grid">
+                  <article class="metric-card">
+                    <strong>{{ appointments.length }}</strong>
+                    <span>Total bookings</span>
+                  </article>
+                  <article class="metric-card">
+                    <strong>{{ completedRate }}%</strong>
+                    <span>Completion rate</span>
+                  </article>
+                  <article class="metric-card">
+                    <strong>{{ refundedPayments.length }}</strong>
+                    <span>Refunded transactions</span>
+                  </article>
+                  <article class="metric-card">
+                    <strong>{{ adminPendingProviders.length }}</strong>
+                    <span>Pending providers</span>
+                  </article>
+                </div>
+
+                <div class="appointment-list">
+                  @for (item of mostBookedSpecializations; track item.specialization) {
+                    <article class="appointment-card">
+                      <strong>{{ item.specialization }}</strong>
+                      <span>{{ item.count }} bookings</span>
+                    </article>
+                  }
+                </div>
+              </section>
+            }
+
+            @if (isActiveSection('reports')) {
+              <section class="page-card stack-card">
+                <div class="section-header">
+                  <div>
+                    <span class="eyebrow">Revenue reports</span>
+                    <h3>Billing and financial reconciliation</h3>
+                  </div>
+                </div>
+
+                @if (!payments.length) {
+                  <div class="status-message">Payment data is required before a revenue report can be generated.</div>
+                } @else {
+                  <div class="summary-grid">
+                    <article class="metric-card">
+                      <strong>INR {{ adminRevenue }}</strong>
+                      <span>Total revenue</span>
+                    </article>
+                    <article class="metric-card">
+                      <strong>{{ payments.length }}</strong>
+                      <span>Total transactions</span>
+                    </article>
+                    <article class="metric-card">
+                      <strong>{{ refundedPayments.length }}</strong>
+                      <span>Refunds</span>
+                    </article>
+                    <article class="metric-card">
+                      <strong>{{ payments.length - refundedPayments.length }}</strong>
+                      <span>Net settled payments</span>
+                    </article>
+                  </div>
+                  <button type="button" class="primary-button" (click)="downloadRevenueReport()">
+                    Generate CSV report
+                  </button>
+                }
+              </section>
+            }
+          }
+        </div>
+      </div>
+    }
+  }
+</section>
